@@ -15,7 +15,7 @@ module.exports =
     @WiFiLog "Host machine is Linux."
     # On linux, we use the results of `nmcli device status` and parse for
     # active `wlan*` interfaces.
-    findInterfaceCom = "nmcli -m multiline device status | grep wlan"
+    findInterfaceCom = "nmcli -m multiline dev status | grep -B 1 -w ' wifi' | head -n 1"
     @WiFiLog "Executing: #{findInterfaceCom}"
     _interfaceLine = @execSync findInterfaceCom
     parsedLine = parsePatterns.nmcli_line.exec( _interfaceLine.trim() )
@@ -104,14 +104,14 @@ module.exports =
     #
     # Use nmcli to list visible wifi networks.
     #
-    scanResults = @execSync "nmcli -m multiline device wifi list"
+    scanResults = @execSync "nmcli -m multiline device wifi list ifname #{@WiFiControlSettings.iface}"
     #
     # Parse the results into an array of AP objects to match
     # the structure found in node-wifiscanner2 for win32 and MacOS.
     #
     networks = []
-    for nwk, c in scanResults.split '*:'
-      continue if c is 0
+    for nwk, c in scanResults.split '\nSSID:'
+      nwk = "SSID:#{nwk}" if c isnt 0
       _network = {}
       for ln, k in nwk.split '\n'
         try
